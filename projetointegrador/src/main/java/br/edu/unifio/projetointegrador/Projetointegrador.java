@@ -16,6 +16,7 @@ public class Projetointegrador { // Classe principal que inicializa o sistema
                 break; // Sai do laço após definir o estilo
             }
         }
+        
         Font fonte = new Font("Segoe UI", Font.PLAIN, 18); // Cria uma fonte personalizada com nome, estilo e tamanho
 
         UIManager.put("OptionPane.messageFont", fonte); // Define a fonte dos textos das caixas de mensagem

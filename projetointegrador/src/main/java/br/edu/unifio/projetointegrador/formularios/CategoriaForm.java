@@ -238,7 +238,7 @@ public class CategoriaForm extends javax.swing.JDialog {
         textoNome.setText(null); // Limpa o campo de nome
         selecaoAtivo.setSelected(true); // Marca o checkbox "ativo" como verdadeiro
 
-        List<Categoria> categorias = DB // Inicia a consulta no banco de dados
+        List<Categoria> lista = DB // Inicia a consulta no banco de dados
                 .find(Categoria.class) // Busca todas as instâncias da classe Categoria
                 .orderBy("nome") // Ordena os resultados pelo nome
                 .findList(); // Finaliza a consulta e retorna a lista
@@ -247,11 +247,11 @@ public class CategoriaForm extends javax.swing.JDialog {
 
         modelo.setRowCount(0); // Limpa todas as linhas atuais da tabela
 
-        for (Categoria cat : categorias) { // Percorre cada categoria da lista
+        for (Categoria categoria : lista) { // Percorre cada categoria da lista
             modelo.addRow( // Adiciona uma nova linha à tabela
                     new Object[]{ // Cria um array de objetos para representar a linha
-                        cat.getCodigo(), // Primeira coluna: código da categoria
-                        cat.getNome() // Segunda coluna: nome da categoria
+                        categoria.getCodigo(), // Primeira coluna: código da categoria
+                        categoria.getNome() // Segunda coluna: nome da categoria
                     }
             );
         }
