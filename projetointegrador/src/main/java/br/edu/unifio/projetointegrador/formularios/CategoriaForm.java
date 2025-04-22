@@ -78,6 +78,11 @@ public class CategoriaForm extends javax.swing.JDialog {
 
         botaoExcluir.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         botaoExcluir.setText("Excluir");
+        botaoExcluir.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                botaoExcluirActionPerformed(evt);
+            }
+        });
 
         botaoEditar.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         botaoEditar.setText("Editar");
@@ -99,19 +104,31 @@ public class CategoriaForm extends javax.swing.JDialog {
 
             },
             new String [] {
-                "Código", "Nome"
+                "Código", "Nome", "Ativo"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.Integer.class, java.lang.String.class
+                java.lang.Integer.class, java.lang.String.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
                 return types [columnIndex];
             }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
         });
         tabelaCategorias.setRowHeight(30);
         tabelaCategorias.getTableHeader().setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 18));
+        tabelaCategorias.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tabelaCategoriasMouseClicked(evt);
+            }
+        });
         rolagemCategorias.setViewportView(tabelaCategorias);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -180,66 +197,19 @@ public class CategoriaForm extends javax.swing.JDialog {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void botaoIncluirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botaoIncluirActionPerformed
-        Categoria categoria = new Categoria(); // Cria uma nova instância de Categoria
-        categoria.setNome(textoNome.getText()); // Define o nome da categoria com o texto inserido pelo usuário
-        categoria.setAtivo(selecaoAtivo.isSelected()); // Define se a categoria está ativa com base na seleção do checkbox
-
-        categoria.save(); // Salva a categoria no banco de dados
-
-        JOptionPane.showMessageDialog(this, "Categoria inserida com sucesso!", "Categorias", JOptionPane.INFORMATION_MESSAGE); // Exibe uma mensagem informando que a categoria foi inserida com sucesso
-
+    private void limpar() {
         textoCodigo.setText(null); // Limpa o campo de código
         textoNome.setText(null); // Limpa o campo de nome
         selecaoAtivo.setSelected(true); // Marca o checkbox como selecionado por padrão
-
-        List<Categoria> categorias = DB // Consulta o banco de dados
-                .find(Categoria.class) // Busca registros da classe Categoria
-                .orderBy("nome") // Ordena os registros pelo nome
-                .findList(); // Recupera a lista de categorias
-
-        DefaultTableModel modelo = (DefaultTableModel) tabelaCategorias.getModel(); // Obtém o modelo da tabela onde as categorias serão exibidas
-
-        modelo.setRowCount(0); // Limpa todas as linhas da tabela antes de atualizar
-
-        for (Categoria cat : categorias) { // Percorre todas as categorias encontradas
-            modelo.addRow( // Adiciona uma nova linha na tabela
-                    new Object[]{ // Cria uma linha com os dados da categoria
-                        cat.getCodigo(), // Coluna 1: código da categoria
-                        cat.getNome() // Coluna 2: nome da categoria
-                    }
-            );
-        }
-
+        
         textoNome.requestFocus(); // Coloca o foco de volta no campo de nome para facilitar o próximo cadastro
-    }//GEN-LAST:event_botaoIncluirActionPerformed
-
-    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
-        List<Categoria> categorias = DB.find(Categoria.class) // Busca todas as categorias no banco de dados
-                .orderBy("nome") // Ordena os resultados pelo nome
-                .findList(); // Finaliza a consulta e retorna a lista de categorias
-
-        DefaultTableModel modelo = (DefaultTableModel) tabelaCategorias.getModel(); // Pega o modelo da tabela onde os dados serão inseridos
-
-        for (Categoria categoria : categorias) { // Percorre cada categoria retornada da consulta
-            modelo.addRow( // Adiciona uma nova linha na tabela
-                    new Object[]{ // Cria um array com os dados da categoria
-                        categoria.getCodigo(), // Código da categoria na primeira coluna
-                        categoria.getNome() // Nome da categoria na segunda coluna
-                    }
-            );
-        }
-
-        textoNome.requestFocus(); // Coloca o foco no campo de nome para facilitar o próximo cadastro
-    }//GEN-LAST:event_formWindowOpened
-
-    private void botaoLimparActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botaoLimparActionPerformed
-        textoCodigo.setText(null); // Limpa o campo de código
-        textoNome.setText(null); // Limpa o campo de nome
-        selecaoAtivo.setSelected(true); // Marca o checkbox "ativo" como verdadeiro
-
+    }
+    
+    private void listar() {
         List<Categoria> lista = DB // Inicia a consulta no banco de dados
                 .find(Categoria.class) // Busca todas as instâncias da classe Categoria
+                .where() // Adiciona uma cláusula WHERE
+                    .eq("ativo", true) // Filtra apenas as categorias onde o campo "ativo" é igual a true
                 .orderBy("nome") // Ordena os resultados pelo nome
                 .findList(); // Finaliza a consulta e retorna a lista
 
@@ -251,13 +221,65 @@ public class CategoriaForm extends javax.swing.JDialog {
             modelo.addRow( // Adiciona uma nova linha à tabela
                     new Object[]{ // Cria um array de objetos para representar a linha
                         categoria.getCodigo(), // Primeira coluna: código da categoria
-                        categoria.getNome() // Segunda coluna: nome da categoria
+                        categoria.getNome(), // Segunda coluna: nome da categoria
+                        categoria.getAtivo() ? "Sim" : "Não" // Terceira coluna: status da categoria
                     }
             );
         }
+    }
+    
+    private void botaoIncluirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botaoIncluirActionPerformed
+        Categoria categoria = new Categoria(); // Cria uma nova instância de Categoria
+        categoria.setNome(textoNome.getText()); // Define o nome da categoria com o texto inserido pelo usuário
+        categoria.setAtivo(selecaoAtivo.isSelected()); // Define se a categoria está ativa com base na seleção do checkbox
 
-        textoNome.requestFocus(); // Coloca o foco no campo de nome para o próximo cadastro
+        categoria.save(); // Salva a categoria no banco de dados
+
+        listar(); // Atualiza a tabela com a lista de categorias ativas ordenadas pelo nome
+        limpar(); // Limpa os campos do formulário e define valores padrão para iniciar um novo cadastro
+
+        JOptionPane.showMessageDialog(this, "Categoria inserida com sucesso!", "Categorias", JOptionPane.INFORMATION_MESSAGE); // Exibe uma mensagem informando que a categoria foi inserida com sucesso
+    }//GEN-LAST:event_botaoIncluirActionPerformed
+
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        listar(); // Atualiza a tabela com a lista de categorias ativas ordenadas pelo nome
+        limpar(); // Limpa os campos do formulário e define valores padrão para iniciar um novo cadastro
+    }//GEN-LAST:event_formWindowOpened
+
+    private void botaoLimparActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botaoLimparActionPerformed
+        listar(); // Atualiza a tabela com a lista de categorias ativas ordenadas pelo nome
+        limpar(); // Limpa os campos do formulário e define valores padrão para iniciar um novo cadastro
     }//GEN-LAST:event_botaoLimparActionPerformed
+
+    private void tabelaCategoriasMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tabelaCategoriasMouseClicked
+        int linhaSelecionada = tabelaCategorias.getSelectedRow(); // Obtém o índice da linha selecionada na tabela `tabelaCategorias`.
+
+        if (linhaSelecionada != -1) { // Verifica se uma linha foi realmente selecionada (índice diferente de -1).
+            textoCodigo.setText(tabelaCategorias.getValueAt(linhaSelecionada, 0).toString()); // Define o texto do campo `textoCodigo` com o valor da célula da primeira coluna (índice 0) da linha selecionada.
+            textoNome.setText(tabelaCategorias.getValueAt(linhaSelecionada, 1).toString()); // Define o texto do campo `textoNome` com o valor da célula da segunda coluna (índice 1) da linha selecionada.
+            selecaoAtivo.setSelected(tabelaCategorias.getValueAt(linhaSelecionada, 2).toString().equals("Sim")); // Define o estado do checkbox `selecaoAtivo` como selecionado se o valor da célula da terceira coluna (índice 2) da linha selecionada for "Sim".
+        }
+    }//GEN-LAST:event_tabelaCategoriasMouseClicked
+
+    private void botaoExcluirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botaoExcluirActionPerformed
+        if (textoCodigo.getText().isEmpty()) { // Verifica se o campo de texto 'textoCodigo' está vazio.
+            JOptionPane.showMessageDialog(this, "O campo código é obrigatório", "Aviso", JOptionPane.WARNING_MESSAGE); // Exibe uma mensagem de aviso ao usuário informando que o campo código é obrigatório.
+            return; // Interrompe a execução do método caso o campo esteja vazio.
+        }
+
+        Categoria categoria = DB.find( // Busca no banco de dados uma entidade da classe 'Categoria' com o ID fornecido.
+                Categoria.class, // Especifica a classe da entidade que será buscada.
+                Integer.valueOf(textoCodigo.getText()) // Converte o valor do campo 'textoCodigo' para um inteiro, que será usado como ID.
+        );
+
+        categoria.setAtivo(false); // Define o atributo 'ativo' da categoria como 'false', desativando-a.
+        categoria.update(); // Atualiza a entidade no banco de dados com a alteração realizada.
+
+        listar(); // Atualiza a tabela com a lista de categorias ativas ordenadas pelo nome
+        limpar(); // Limpa os campos do formulário e define valores padrão para iniciar um novo cadastro
+
+        JOptionPane.showMessageDialog(this, "Categoria removida com sucesso!", "Categorias", JOptionPane.INFORMATION_MESSAGE); // Exibe uma mensagem informando ao usuário que a categoria foi removida com sucesso.
+    }//GEN-LAST:event_botaoExcluirActionPerformed
 
     /**
      * @param args the command line arguments
